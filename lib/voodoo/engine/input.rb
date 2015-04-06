@@ -1,5 +1,5 @@
 module Voodoo
-  class Input < Moon::Input
+  class Input
     INPUT_MAP = {
       Curses::KEY_A1 => :A1,
       Curses::KEY_A3 => :A3,
@@ -190,28 +190,34 @@ module Voodoo
       Curses.stdscr.keypad(true)
     end
 
+    def convert_key(c)
+      if sym = INPUT_MAP[c]
+        sym
+      elsif c.is_a?(String)
+        c.to_sym
+      else
+        fail "Unhandled input #{c}"
+      end
+    end
+
     def update(delta)
       keys = []
+
       while c = Curses.getch
         #next unless c =~ /[a-z]/i
-        key = if sym = INPUT_MAP[c]
-          sym
-        elsif c.is_a?(String)
-          c.to_sym
-        else
-          fail "Unhandled input #{c}"
-        end
+        key = convert_key(c)
         keys << key
-        unless @state.key?(key)
-          on_key(key, nil, :press, 0)
-        end
+        on_key(key, c, :press, 0) unless @state.key?(key)
         @state[key] = true
       end
 
       (@state.keys - keys).each do |key|
         @state.delete(key)
-        on_key(key, nil, :release, 0)
+        on_key(key, c, :release, 0)
       end
+    end
+
+    def on_key(key, scancode, action, mods)
     end
   end
 end
